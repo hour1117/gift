@@ -1,0 +1,13 @@
+{
+  "name": "gift-box",
+  "version": "2.0.0",
+  "description": "神秘礼盒 - 抽礼物网站",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

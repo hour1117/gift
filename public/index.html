@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="神秘礼盒 - 选一个打开，看看属于你的惊喜">
+<meta property="og:title" content="🎁 神秘礼盒">
+<meta property="og:description" content="选一个打开，看看属于你的惊喜">
+<meta property="og:type" content="website">
+<title>🎁 神秘礼盒</title>
+<style>
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(160deg, #06061a 0%, #0f0f2e 25%, #1a1040 50%, #0a0a20 75%, #06061a 100%);
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== Floating Stars Background ===== */
+.stars {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+}
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle var(--dur) ease-in-out infinite;
+  animation-delay: var(--delay);
+  opacity: 0;
+}
+.star.shooting {
+  animation: shootStar 1.5s linear forwards;
+  width: 2px !important;
+  height: 2px !important;
+  box-shadow: 0 0 6px 2px rgba(255,255,255,0.8);
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.8); }
+}
+@keyframes shootStar {
+  0% { transform: translate(0, 0); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(var(--sx), var(--sy)); opacity: 0; }
+}
+
+/* ===== Main Container ===== */
+.container {
+  position: relative; z-index: 1;
+  max-width: 960px; margin: 0 auto; padding: 30px 20px 60px;
+}
+
+/* ===== Header ===== */
+.header {
+  text-align: center; margin-bottom: 40px; padding-top: 20px;
+}
+.header h1 {
+  font-size: 3em;
+  background: linear-gradient(180deg, #f5d98e 0%, #e8c97a 20%, #c49a5c 50%, #a0783c 80%, #c49a5c 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+  letter-spacing: 3px;
+  filter: drop-shadow(0 2px 12px rgba(232,201,122,0.3));
+  line-height: 1.3;
+}
+.header .subtitle {
+  font-size: 1.1em; color: rgba(255,255,255,0.55); letter-spacing: 2px;
+}
+.header .subtitle .sparkle {
+  display: inline-block;
+  animation: emojiBounce 1.5s ease-in-out infinite;
+}
+.header .opened-hint {
+  display: none;
+  margin-top: 14px; padding: 10px 24px;
+  background: rgba(232,201,122,0.08); border-radius: 24px;
+  color: #e8c97a; font-size: 0.95em;
+  border: 1px solid rgba(232,201,122,0.2);
+  animation: hintPulse 3s ease-in-out infinite;
+}
+@keyframes hintPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232,201,122,0.1); }
+  50% { box-shadow: 0 0 18px 4px rgba(232,201,122,0.18); }
+}
+
+/* ===== Reset Link Banner ===== */
+.reset-banner {
+  display: none;
+  margin: 0 auto 24px; max-width: 500px;
+  padding: 14px 20px;
+  background: rgba(100,180,255,0.08); border: 1px solid rgba(100,180,255,0.2);
+  border-radius: 14px; text-align: center;
+  color: rgba(255,255,255,0.75); font-size: 0.9em;
+  animation: fadeIn 0.6s ease;
+}
+.reset-banner .reset-link { display: block; margin-top: 6px; color: #6ea8fe; font-size: 0.85em; word-break: break-all; }
+.reset-banner.success { display: block; background: rgba(117,183,152,0.1); border-color: rgba(117,183,152,0.3); }
+
+/* ===== Gift Box Grid ===== */
+.gift-grid {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 50px 60px; padding: 20px 0;
+}
+
+/* ===== Gift Box Wrapper ===== */
+.gift-box-wrapper {
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; transition: transform 0.35s ease, opacity 0.5s ease;
+  position: relative;
+}
+.gift-box-wrapper:hover .gift-box { transform: translateY(-10px); }
+.gift-box-wrapper:hover .box-glow { opacity: 1; transform: translateX(-50%) scale(1.3); }
+.gift-box-wrapper.opened-box {
+  cursor: not-allowed; opacity: 0.35; pointer-events: none;
+}
+.gift-box-wrapper.opened-box .orbiting-sparkles { display: none; }
+.gift-box-wrapper.shaking .gift-box { animation: boxShake 0.5s ease-in-out; }
+.gift-box-wrapper.opened-by-me { opacity: 1 !important; cursor: pointer !important; pointer-events: auto !important; }
+
+/* ===== Orbiting Sparkles ===== */
+.orbiting-sparkles {
+  position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+  width: 180px; height: 150px; pointer-events: none; z-index: 0;
+}
+.orbit-sparkle {
+  position: absolute;
+  width: 4px; height: 4px;
+  background: var(--sparkle-color, #e8c97a);
+  border-radius: 50%;
+  box-shadow: 0 0 6px 2px var(--sparkle-color, #e8c97a);
+  animation: orbit var(--orbit-dur, 3s) linear infinite;
+  animation-delay: var(--orbit-delay, 0s);
+  top: 50%; left: 50%;
+}
+@keyframes orbit {
+  0% { transform: translate(-50%, -50%) rotate(0deg) translateX(var(--orbit-r, 80px)) rotate(0deg); opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { transform: translate(-50%, -50%) rotate(360deg) translateX(var(--orbit-r, 80px)) rotate(-360deg); opacity: 0.3; }
+}
+
+.gift-box {
+  position: relative; width: 150px; height: 140px;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+  perspective: 500px;
+  transform-style: preserve-3d;
+}
+
+/* Box glow */
+.box-glow {
+  position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%);
+  width: 110px; height: 24px;
+  background: var(--glow-color);
+  border-radius: 50%; filter: blur(18px);
+  opacity: 0.45; transition: all 0.4s ease;
+  z-index: 0;
+}
+
+/* Box Body */
+.box-body {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 136px; height: 110px;
+  background: var(--box-color);
+  border-radius: 10px;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.5),
+    0 0 0 2px var(--box-edge, rgba(255,255,255,0.1)),
+    inset 0 2px 0 rgba(255,255,255,0.15),
+    inset 0 -6px 0 rgba(0,0,0,0.12);
+  z-index: 1;
+}
+
+/* Ribbons */
+.ribbon-v {
+  position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+  width: 22px; height: 100%; background: var(--ribbon-color);
+  border-radius: 3px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 3;
+}
+.ribbon-h {
+  position: absolute; top: 50%; left: 0; transform: translateY(-50%);
+  width: 100%; height: 22px; background: var(--ribbon-color);
+  border-radius: 3px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 3;
+}
+.ribbon-cross {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 24px; height: 24px; background: var(--ribbon-color);
+  border-radius: 4px; z-index: 4;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.3);
+}
+
+/* Box Lid */
+.box-lid {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 150px; height: 26px;
+  background: var(--lid-color);
+  border-radius: 12px 12px 4px 4px;
+  box-shadow:
+    0 6px 16px rgba(0,0,0,0.35),
+    inset 0 3px 0 rgba(255,255,255,0.25),
+    0 0 0 1px rgba(255,255,255,0.08);
+  z-index: 5;
+  transform-origin: left bottom;
+  transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.lid-ribbon {
+  position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+  width: 22px; height: 100%; background: var(--ribbon-color);
+  border-radius: 3px 3px 0 0; z-index: 6;
+}
+
+/* Bow */
+.bow {
+  position: absolute; top: -20px; left: 50%; transform: translateX(-50%); z-index: 7;
+}
+.bow::before, .bow::after {
+  content: '';
+  position: absolute;
+  width: 30px; height: 20px;
+  background: var(--ribbon-color);
+  border-radius: 50%;
+  box-shadow: inset 0 3px 0 rgba(255,255,255,0.35);
+}
+.bow::before { left: -26px; transform: rotate(-35deg); }
+.bow::after  { left: -4px;  transform: rotate(35deg); }
+.bow-center {
+  width: 16px; height: 16px;
+  background: var(--ribbon-color);
+  border-radius: 50%;
+  margin: 4px auto 0;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.4);
+}
+
+/* ===== Opening animation ===== */
+.gift-box-wrapper.opening .box-lid {
+  transform: translateX(-50%) translateY(-90px) rotate(-40deg);
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.gift-box-wrapper.opening .gift-box { animation: boxPop 0.6s ease-out; }
+
+/* Light beam on opening */
+.light-beam {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 60px; height: 0;
+  background: linear-gradient(to top,
+    rgba(255,215,0,0.9) 0%, rgba(255,200,80,0.6) 30%,
+    rgba(255,255,200,0.3) 60%, transparent 100%);
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(8px);
+  pointer-events: none;
+  animation: beamUp 1s ease-out forwards;
+}
+@keyframes beamUp {
+  0% { height: 0; opacity: 0; }
+  30% { height: 300px; opacity: 1; }
+  100% { height: 500px; opacity: 0; }
+}
+
+/* Golden crack effect */
+.golden-crack {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 2px; height: 0;
+  background: linear-gradient(to bottom, #ffd700, #ffaa00, transparent);
+  z-index: 8;
+  pointer-events: none;
+  box-shadow: 0 0 10px 3px rgba(255,215,0,0.8);
+  animation: crackGrow 0.6s ease-out forwards;
+  animation-delay: 0.3s;
+}
+@keyframes crackGrow {
+  0% { height: 0; opacity: 0; }
+  50% { opacity: 1; }
+  100% { height: 40px; opacity: 0; }
+}
+
+@keyframes boxShake {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(-10deg); }
+  30% { transform: rotate(10deg); }
+  45% { transform: rotate(-7deg); }
+  60% { transform: rotate(7deg); }
+  75% { transform: rotate(-3deg); }
+  90% { transform: rotate(3deg); }
+}
+@keyframes boxPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* Box label */
+.box-label {
+  margin-top: 14px; font-size: 0.9em; color: rgba(255,255,255,0.45);
+  letter-spacing: 2px; transition: color 0.3s;
+}
+.gift-box-wrapper:hover .box-label { color: rgba(255,255,255,0.85); }
+.gift-box-wrapper.opened-box .box-label { color: rgba(255,255,255,0.25); }
+.gift-box-wrapper.opened-by-me .box-label { color: #e8c97a !important; font-weight: 600; }
+
+/* Opened badge */
+.opened-badge {
+  display: none; position: absolute; top: -8px; right: -8px; z-index: 10;
+  width: 38px; height: 38px;
+  background: rgba(255,255,255,0.1); border-radius: 50%;
+  backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.12);
+  font-size: 18px; line-height: 38px; text-align: center;
+}
+.gift-box-wrapper.opened-box .opened-badge { display: block; }
+.gift-box-wrapper.opened-by-me .opened-badge { background: rgba(232,201,122,0.2); border-color: rgba(232,201,122,0.4); }
+
+/* ===== 6 Color Themes (upgraded) ===== */
+.gift-box-wrapper:nth-child(1) {
+  --box-color: linear-gradient(180deg, #f0b0d0, #d4879e, #b86a82);
+  --lid-color: #e090aa; --ribbon-color: #f8d0e4; --glow-color: rgba(240,176,208,0.5);
+  --box-edge: rgba(255,200,220,0.25); --sparkle-color: #ffb0d0;
+}
+.gift-box-wrapper:nth-child(2) {
+  --box-color: linear-gradient(180deg, #7eb8ff, #4a8ae0, #3060b0);
+  --lid-color: #6098f0; --ribbon-color: #b0d4ff; --glow-color: rgba(126,184,255,0.5);
+  --box-edge: rgba(150,200,255,0.25); --sparkle-color: #80c0ff;
+}
+.gift-box-wrapper:nth-child(3) {
+  --box-color: linear-gradient(180deg, #80c8a0, #4d8a6e, #306050);
+  --lid-color: #60b088; --ribbon-color: #b8e8d0; --glow-color: rgba(128,200,160,0.5);
+  --box-edge: rgba(150,220,180,0.25); --sparkle-color: #80e0a0;
+}
+.gift-box-wrapper:nth-child(4) {
+  --box-color: linear-gradient(180deg, #c0a0e0, #8e6dba, #6040a0);
+  --lid-color: #a880d0; --ribbon-color: #e0d0f8; --glow-color: rgba(192,160,224,0.5);
+  --box-edge: rgba(210,180,240,0.25); --sparkle-color: #c0a0f0;
+}
+.gift-box-wrapper:nth-child(5) {
+  --box-color: linear-gradient(180deg, #f8b090, #d47e63, #b05040);
+  --lid-color: #e89878; --ribbon-color: #fcd0c0; --glow-color: rgba(248,176,144,0.5);
+  --box-edge: rgba(255,200,170,0.25); --sparkle-color: #ffb090;
+}
+.gift-box-wrapper:nth-child(6) {
+  --box-color: linear-gradient(180deg, #f8e0a0, #dab840, #b09020);
+  --lid-color: #e8c860; --ribbon-color: #fcf0c0; --glow-color: rgba(248,224,160,0.5);
+  --box-edge: rgba(255,240,180,0.25); --sparkle-color: #ffe090;
+}
+
+/* ===== Particles ===== */
+.particle {
+  position: fixed; pointer-events: none; z-index: 100;
+  font-size: 26px; animation: particleFly 1.4s ease-out forwards;
+}
+@keyframes particleFly {
+  0% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(0) rotate(var(--rot, 180deg)); }
+}
+
+/* ===== Card Overlay ===== */
+.card-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.78);
+  backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+.card-overlay.active { opacity: 1; pointer-events: auto; }
+
+@keyframes cardRise {
+  from { transform: translateY(90px) scale(0.4) rotateY(15deg); opacity: 0; }
+  to   { transform: translateY(0) scale(1) rotateY(0); opacity: 1; }
+}
+
+/* ===== Flip Card ===== */
+.card-scene {
+  perspective: 1400px;
+  animation: cardRise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.card-scene.flipped .card-inner { transform: rotateY(180deg); }
+
+.card-inner {
+  position: relative;
+  width: 480px; height: 660px;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.card-front, .card-back {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  backface-visibility: hidden;
+  border-radius: 22px;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.55);
+}
+
+/* Shimmer border */
+.card-front::before {
+  content: ''; position: absolute; top: -3px; left: -3px; right: -3px; bottom: -3px;
+  border-radius: 24px;
+  background: linear-gradient(135deg,
+    rgba(232,201,122,0.5), rgba(200,160,100,0.2), rgba(232,201,122,0.5),
+    rgba(200,160,100,0.2), rgba(232,201,122,0.5));
+  z-index: -1;
+  background-size: 300% 300%;
+  animation: shimmerBorder 3s linear infinite;
+}
+@keyframes shimmerBorder {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.card-front {
+  background: linear-gradient(150deg, #181428, #241e38, #1a1430);
+  color: white;
+}
+.card-front .gift-emoji {
+  font-size: 88px; margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  animation: emojiBounce 1.2s ease-in-out infinite;
+}
+.card-front .gift-image {
+  width: 100%; max-height: 400px; object-fit: contain;
+  border-radius: 18px; margin-bottom: 14px;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.5);
+  animation: emojiBounce 1.2s ease-in-out infinite;
+}
+@keyframes emojiBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.card-front .gift-name {
+  font-size: 2.2em; font-weight: 700;
+  background: linear-gradient(180deg, #f5d98e, #c49a5c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+.card-front .gift-desc {
+  font-size: 1.1em; color: rgba(255,255,255,0.65);
+  line-height: 1.7; margin-bottom: 28px;
+}
+.card-front .flip-hint {
+  font-size: 0.85em; color: rgba(255,255,255,0.35);
+  display: flex; align-items: center; gap: 8px;
+}
+.flip-hint .flip-arrow {
+  display: inline-block;
+  animation: flipPulse 1.5s ease-in-out infinite;
+}
+@keyframes flipPulse {
+  0%, 100% { transform: rotateY(0); opacity: 0.4; }
+  50% { transform: rotateY(180deg); opacity: 1; }
+}
+
+.card-back {
+  background: linear-gradient(150deg, #2a1e28, #3c2e3a, #2a1e28);
+  transform: rotateY(180deg);
+}
+.card-back::before {
+  content: ''; position: absolute; top: -3px; left: -3px; right: -3px; bottom: -3px;
+  border-radius: 24px;
+  background: linear-gradient(135deg,
+    rgba(220,180,140,0.45), rgba(180,140,100,0.15), rgba(220,180,140,0.45));
+  z-index: -1;
+  background-size: 300% 300%;
+  animation: shimmerBorder 3s linear infinite reverse;
+}
+.card-back .blessing-label {
+  font-size: 1em; color: #e8c97a; letter-spacing: 5px;
+  margin-bottom: 28px; text-transform: uppercase;
+}
+.card-back .blessing-text {
+  font-size: 1.4em; color: rgba(255,255,255,0.88);
+  line-height: 2.2; letter-spacing: 1px;
+  position: relative;
+}
+.card-back .blessing-text::before,
+.card-back .blessing-text::after {
+  content: '"'; font-size: 2.4em; color: rgba(220,180,140,0.35);
+  position: absolute;
+}
+.card-back .blessing-text::before { top: -24px; left: -14px; }
+.card-back .blessing-text::after  { bottom: -36px; right: -14px; }
+.card-back .flip-back-hint {
+  font-size: 0.8em; color: rgba(255,255,255,0.3); margin-top: 24px;
+}
+
+/* Close button */
+.close-card {
+  position: absolute; top: -54px; right: 0;
+  width: 42px; height: 42px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 50%; color: white; font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
+}
+.close-card:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+
+/* ===== Confetti Canvas ===== */
+#confetti-canvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; z-index: 350;
+}
+
+/* ===== Confirmation Modal ===== */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(5px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 150; opacity: 0; pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+.modal-box {
+  background: linear-gradient(145deg, #1a162e, #2a2440);
+  border-radius: 22px; padding: 40px 36px 32px; text-align: center;
+  max-width: 400px; width: 90%;
+  border: 1px solid rgba(232,201,122,0.2);
+  box-shadow: 0 24px 56px rgba(0,0,0,0.55);
+  animation: modalIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes modalIn {
+  from { transform: scale(0.82) translateY(24px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+.modal-box .modal-emoji { font-size: 64px; margin-bottom: 14px; }
+.modal-box h3 { color: white; font-size: 1.3em; margin-bottom: 10px; }
+.modal-box p { color: rgba(255,255,255,0.5); font-size: 0.9em; line-height: 1.7; margin-bottom: 26px; }
+.modal-buttons { display: flex; gap: 14px; justify-content: center; }
+.btn {
+  padding: 11px 30px; border-radius: 26px; border: none; font-size: 1em;
+  cursor: pointer; transition: all 0.3s; font-family: inherit;
+}
+.btn-cancel {
+  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.65);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.btn-cancel:hover { background: rgba(255,255,255,0.16); }
+.btn-confirm {
+  background: linear-gradient(135deg, #f0d080, #c49a5c);
+  color: #1a1a2e; font-weight: 600;
+  box-shadow: 0 4px 18px rgba(232,201,122,0.35);
+}
+.btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,201,122,0.5); }
+
+/* ===== Admin Panel ===== */
+.admin-trigger {
+  position: fixed; bottom: 24px; right: 24px; z-index: 50;
+  width: 46px; height: 46px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50%; color: rgba(255,255,255,0.35); font-size: 20px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
+}
+.admin-trigger:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+
+.admin-panel {
+  position: fixed; top: 0; right: -440px; width: 420px; max-width: 94vw; height: 100%;
+  background: linear-gradient(180deg, #10102a, #181840);
+  border-left: 1px solid rgba(255,255,255,0.08);
+  z-index: 400; padding: 32px 26px;
+  overflow-y: auto;
+  transition: right 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -10px 0 36px rgba(0,0,0,0.55);
+}
+.admin-panel.open { right: 0; }
+
+.admin-panel h2 {
+  color: white; font-size: 1.35em; margin-bottom: 6px;
+}
+.admin-panel .admin-subtitle {
+  color: rgba(255,255,255,0.35); font-size: 0.85em; margin-bottom: 28px;
+}
+.admin-panel label {
+  display: block; color: rgba(255,255,255,0.55); font-size: 0.8em;
+  margin-bottom: 5px; margin-top: 16px; letter-spacing: 0.5px;
+}
+.admin-panel input, .admin-panel textarea {
+  width: 100%; padding: 11px 15px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 11px; color: white; font-size: 0.95em;
+  font-family: inherit; resize: vertical; outline: none;
+  transition: border-color 0.3s;
+}
+.admin-panel input:focus, .admin-panel textarea:focus {
+  border-color: rgba(232,201,122,0.5);
+}
+.admin-box-group {
+  background: rgba(255,255,255,0.025); border-radius: 15px;
+  padding: 16px 18px 12px; margin-bottom: 18px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.admin-box-group h4 {
+  color: #e8c97a; font-size: 0.88em; margin-bottom: 4px;
+}
+.admin-box-group .box-color-dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  margin-right: 8px; vertical-align: middle;
+}
+.admin-actions {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px;
+}
+.btn-save {
+  flex: 1; padding: 13px;
+  background: linear-gradient(135deg, #e8c97a, #c49a5c);
+  color: #1a1a2e; border: none; border-radius: 26px;
+  font-size: 1em; font-weight: 600; cursor: pointer;
+}
+.btn-save:hover { filter: brightness(1.1); }
+.btn-restart {
+  flex: 1; padding: 13px;
+  background: rgba(232,201,122,0.12); color: #e8c97a;
+  border: 1px solid rgba(232,201,122,0.25); border-radius: 26px;
+  font-size: 0.95em; cursor: pointer; transition: all 0.3s;
+}
+.btn-restart:hover { background: rgba(232,201,122,0.22); }
+.btn-reset {
+  flex: 1; padding: 13px;
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.55);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 26px;
+  font-size: 0.95em; cursor: pointer;
+}
+.btn-reset:hover { background: rgba(255,80,80,0.15); color: #ff6b6b; border-color: rgba(255,80,80,0.3); }
+.btn-gen-reset {
+  width: 100%; margin-top: 8px; padding: 12px;
+  background: linear-gradient(135deg, #6ea8fe, #4a8ae0);
+  color: white; border: none; border-radius: 26px;
+  font-size: 0.95em; font-weight: 600; cursor: pointer;
+  transition: all 0.3s;
+}
+.btn-gen-reset:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+.reset-link-result {
+  display: none; margin-top: 12px; padding: 12px 16px;
+  background: rgba(110,168,254,0.1); border: 1px solid rgba(110,168,254,0.2);
+  border-radius: 12px; font-size: 0.85em; color: #6ea8fe;
+  word-break: break-all; cursor: pointer; text-align: center;
+}
+.reset-link-result.show { display: block; }
+
+/* Stats */
+.admin-stats {
+  margin-top: 16px; padding: 14px 16px;
+  background: rgba(255,255,255,0.03); border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.82em; color: rgba(255,255,255,0.45);
+  max-height: 200px; overflow-y: auto;
+}
+.admin-stats .stat-row {
+  padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex; justify-content: space-between;
+}
+
+.admin-backdrop {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); z-index: 350;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.admin-backdrop.active { opacity: 1; pointer-events: auto; }
+
+.admin-password-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.82); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 500; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.admin-password-overlay.active { opacity: 1; pointer-events: auto; }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+  padding: 13px 30px; border-radius: 26px;
+  background: #2a2a4a; color: white; font-size: 0.9em;
+  z-index: 600; pointer-events: none;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.12);
+  animation: toastIn 0.4s ease, toastOut 0.3s 2.4s ease forwards;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-22px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .header h1 { font-size: 2.2em; }
+  .gift-grid { gap: 36px 44px; }
+  .gift-box { width: 120px; height: 115px; }
+  .box-body { width: 108px; height: 88px; }
+  .box-lid { width: 120px; height: 22px; }
+  .ribbon-v { width: 18px; } .ribbon-h { height: 18px; }
+  .card-inner { width: 400px; height: 580px; }
+  .orbiting-sparkles { width: 150px; height: 130px; top: 50px; }
+  .admin-panel { width: 100%; max-width: 100vw; right: -100%; }
+}
+@media (max-width: 480px) {
+  .header h1 { font-size: 1.8em; letter-spacing: 2px; }
+  .gift-grid { gap: 28px 32px; }
+  .gift-box { width: 95px; height: 95px; }
+  .box-body { width: 84px; height: 70px; border-radius: 8px; }
+  .box-lid { width: 96px; height: 17px; border-radius: 10px 10px 3px 3px; }
+  .ribbon-v { width: 14px; } .ribbon-h { height: 14px; }
+  .bow::before, .bow::after { width: 22px; height: 15px; }
+  .bow::before { left: -19px; } .bow::after { left: -3px; }
+  .bow-center { width: 11px; height: 11px; }
+  .card-inner { width: 340px; height: 500px; }
+  .card-front, .card-back { padding: 24px 16px; }
+  .card-front .gift-emoji { font-size: 60px; }
+  .card-front .gift-name { font-size: 1.5em; }
+  .orbiting-sparkles { width: 120px; height: 110px; top: 42px; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Stars Background -->
+<div class="stars" id="stars"></div>
+
+<!-- Main Container -->
+<div class="container">
+  <div class="header">
+    <h1>🎁 神秘礼盒</h1>
+    <p class="subtitle">选一个打开，看看属于你的 <span class="sparkle">✨</span> 惊喜</p>
+    <div class="opened-hint" id="openedHint">✨ 你已经开启了一个礼盒，看看你的礼物吧</div>
+  </div>
+
+  <!-- Reset Banner -->
+  <div class="reset-banner" id="resetBanner">
+    <span id="resetBannerMsg"></span>
+    <span class="reset-link" id="resetBannerLink"></span>
+  </div>
+
+  <!-- Gift Box Grid -->
+  <div class="gift-grid" id="giftGrid"></div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-emoji">🎁</div>
+    <h3>确定打开这个礼盒吗？</h3>
+    <p>每人只能选择一个礼盒哦，<br>选定后无法更改</p>
+    <div class="modal-buttons">
+      <button class="btn btn-cancel" id="btnCancel">再想想</button>
+      <button class="btn btn-confirm" id="btnConfirm">打开！✨</button>
+    </div>
+  </div>
+</div>
+
+<!-- Card Overlay -->
+<div class="card-overlay" id="cardOverlay">
+  <div style="position:relative; display:flex; align-items:center; justify-content:center;">
+  <button class="close-card" id="closeCard" title="关闭">✕</button>
+  <div class="card-scene" id="cardScene">
+    <div class="card-inner" id="cardInner">
+      <div class="card-front">
+        <img class="gift-image" id="cardImage" src="" alt="礼物" style="display:none;">
+        <div class="gift-emoji" id="cardEmoji"></div>
+        <div class="gift-name" id="cardName">礼物名称</div>
+        <p class="gift-desc" id="cardDesc">礼物描述</p>
+        <div class="flip-hint">👆 点击翻转查看祝福 <span class="flip-arrow">↻</span></div>
+      </div>
+      <div class="card-back">
+        <div class="blessing-label">✧ 祝福 ✧</div>
+        <p class="blessing-text" id="blessingText">祝福语内容</p>
+        <div class="flip-back-hint">点击翻回正面</div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- Confetti Canvas -->
+<canvas id="confetti-canvas"></canvas>
+
+<!-- Admin Trigger -->
+<button class="admin-trigger" id="adminTrigger" title="管理礼盒">⚙️</button>
+
+<!-- Admin Backdrop -->
+<div class="admin-backdrop" id="adminBackdrop"></div>
+
+<!-- Admin Password -->
+<div class="admin-password-overlay" id="adminPasswordOverlay">
+  <div class="modal-box">
+    <div class="modal-emoji">🔐</div>
+    <h3>管理员验证</h3>
+    <p style="margin-bottom:16px;">请输入管理密码</p>
+    <input type="password" id="adminPasswordInput" placeholder="输入密码" style="width:100%;padding:11px 15px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:11px;color:white;font-size:1em;text-align:center;outline:none;">
+    <div class="modal-buttons" style="margin-top:16px;">
+      <button class="btn btn-cancel" id="btnPasswordCancel">取消</button>
+      <button class="btn btn-confirm" id="btnPasswordConfirm">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Panel -->
+<div class="admin-panel" id="adminPanel">
+  <h2>⚙️ 礼盒管理</h2>
+  <p class="admin-subtitle">设置每个礼盒的内容和祝福语</p>
+  <div id="adminBoxForms"></div>
+  <button class="btn-gen-reset" id="btnGenReset">🔗 生成专属重置链接</button>
+  <div class="reset-link-result" id="resetLinkResult"></div>
+  <div class="admin-stats" id="adminStats"></div>
+  <div class="admin-actions">
+    <button class="btn-save" id="btnSaveGifts">💾 保存设置</button>
+    <button class="btn-restart" id="btnRestart">🎰 重新抽</button>
+    <button class="btn-reset" id="btnResetAll">🔄 重置所有</button>
+  </div>
+</div>
+
+<script>
+// ==================== SOUND MANAGER ====================
+class SoundManager {
+  constructor() {
+    this.ctx = null;
+    this.initialized = false;
+    this.enabled = true;
+  }
+
+  init() {
+    if (this.initialized) return;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.initialized = true;
+    } catch (e) {
+      console.warn('Web Audio API 不可用');
+      this.enabled = false;
+    }
+  }
+
+  resume() {
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  _note(ctx, freq, type, start, duration, gainVal = 0.15, dest = null) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(gainVal, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+    osc.connect(gain);
+    gain.connect(dest || ctx.destination);
+    osc.start(start);
+    osc.stop(start + duration);
+  }
+
+  hover() {
+    if (!this.enabled || !this.initialized) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, now);
+    osc.frequency.linearRampToValueAtTime(900, now + 0.1);
+    gain.gain.setValueAtTime(0.06, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
+
+  shake() {
+    if (!this.enabled || !this.initialized) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    for (let i = 0; i < 8; i++) {
+      const t = now + i * 0.06;
+      this._note(ctx, 80 + Math.random() * 60, 'triangle', t, 0.06, 0.08);
+    }
+  }
+
+  open() {
+    if (!this.enabled || !this.initialized) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+
+    // Sparkle chord
+    const freqs = [523, 659, 784, 1047, 1319, 1568];
+    freqs.forEach((f, i) => {
+      const t = now + i * 0.06;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, t);
+      gain.gain.setValueAtTime(0.1, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.9);
+    });
+
+    // Bass thump
+    const bass = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+    bass.type = 'sine';
+    bass.frequency.setValueAtTime(120, now);
+    bass.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+    bassGain.gain.setValueAtTime(0.25, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    bass.connect(bassGain);
+    bassGain.connect(ctx.destination);
+    bass.start(now);
+    bass.stop(now + 0.4);
+  }
+
+  flip() {
+    if (!this.enabled || !this.initialized) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.linearRampToValueAtTime(200, now + 0.12);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
+
+  celebrate() {
+    if (!this.enabled || !this.initialized) return;
+    const ctx = this.ctx;
+    const now = ctx.currentTime;
+    const melody = [523, 659, 784, 1047, 784, 1047, 1319];
+    melody.forEach((f, i) => {
+      this._note(ctx, f, 'sine', now + i * 0.1, 0.2, 0.07);
+    });
+  }
+}
+
+const sound = new SoundManager();
+
+// ==================== DEFAULT GIFT DATA ====================
+const DEFAULT_GIFTS = [
+  { name: '神秘礼盒 ①', emoji: '', img: '76eddc31e8cee3acdd4a4824c994d00.jpg', desc: '打开看看属于你的礼物', blessing: '贵我就会不买吗 手感好就应该是我老婆的' },
+  { name: '神秘礼盒 ②', emoji: '', img: '76eddc31e8cee3acdd4a4824c994d00.jpg', desc: '打开看看属于你的礼物', blessing: '贵我就会不买吗 手感好就应该是我老婆的' },
+  { name: '神秘礼盒 ③', emoji: '', img: '76eddc31e8cee3acdd4a4824c994d00.jpg', desc: '打开看看属于你的礼物', blessing: '贵我就会不买吗 手感好就应该是我老婆的' },
+  { name: '神秘礼盒 ④', emoji: '', img: '76eddc31e8cee3acdd4a4824c994d00.jpg', desc: '打开看看属于你的礼物', blessing: '贵我就会不买吗 手感好就应该是我老婆的' },
+  { name: '神秘礼盒 ⑤', emoji: '', img: '76eddc31e8cee3acdd4a4824c994d00.jpg', desc: '打开看看属于你的礼物', blessing: '贵我就会不买吗 手感好就应该是我老婆的' },
+  { name: '神秘礼盒 ⑥', emoji: '', img: '76eddc31e8cee3acdd4a4824c994d00.jpg', desc: '打开看看属于你的礼物', blessing: '贵我就会不买吗 手感好就应该是我老婆的' },
+];
+
+const ADMIN_PASSWORD = 'zjmaicsy';
+
+// ==================== STATE MANAGEMENT ====================
+function loadGifts() {
+  try {
+    const raw = localStorage.getItem('giftBoxData');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return [...DEFAULT_GIFTS];
+}
+
+function saveGifts(gifts) {
+  localStorage.setItem('giftBoxData', JSON.stringify(gifts));
+}
+
+function isOpenedLocal() {
+  return localStorage.getItem('giftBoxOpened') === 'true';
+}
+
+function getOpenedIndexLocal() {
+  const v = localStorage.getItem('giftBoxOpenedIndex');
+  return v !== null ? parseInt(v) : null;
+}
+
+function markOpenedLocal(index) {
+  localStorage.setItem('giftBoxOpened', 'true');
+  localStorage.setItem('giftBoxOpenedIndex', index.toString());
+}
+
+function resetLocalState() {
+  localStorage.removeItem('giftBoxOpened');
+  localStorage.removeItem('giftBoxOpenedIndex');
+}
+
+// ==================== API HELPERS ====================
+async function apiStatus() {
+  try {
+    const res = await fetch('/api/status');
+    return await res.json();
+  } catch (e) {
+    console.warn('API 不可用，使用本地状态');
+    return { drawn: isOpenedLocal(), boxIndex: getOpenedIndexLocal(), drawnAt: null };
+  }
+}
+
+async function apiDraw(boxIndex) {
+  try {
+    const res = await fetch('/api/draw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ boxIndex }),
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn('API 不可用，使用本地状态');
+    markOpenedLocal(boxIndex);
+    return { success: true };
+  }
+}
+
+async function apiGenerateResetToken(password) {
+  try {
+    const res = await fetch('/api/admin/reset-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Password': password },
+    });
+    return await res.json();
+  } catch (e) {
+    return { success: false, error: '网络错误' };
+  }
+}
+
+async function apiUseResetToken(token) {
+  try {
+    const res = await fetch(`/api/reset/${token}`, { method: 'POST' });
+    return await res.json();
+  } catch (e) {
+    return { success: false, error: '网络错误' };
+  }
+}
+
+async function apiAdminStats(password) {
+  try {
+    const res = await fetch(`/api/admin/stats?password=${encodeURIComponent(password)}`);
+    return await res.json();
+  } catch (e) {
+    return { error: '网络错误' };
+  }
+}
+
+async function apiAdminClearAll(password) {
+  try {
+    const res = await fetch('/api/admin/clear-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Password': password },
+    });
+    return await res.json();
+  } catch (e) {
+    return { success: false, error: '网络错误' };
+  }
+}
+
+// ==================== DOM REFS ====================
+const giftGrid = document.getElementById('giftGrid');
+const confirmModal = document.getElementById('confirmModal');
+const cardOverlay = document.getElementById('cardOverlay');
+const cardScene = document.getElementById('cardScene');
+const cardInner = document.getElementById('cardInner');
+const cardEmoji = document.getElementById('cardEmoji');
+const cardImage = document.getElementById('cardImage');
+const cardName = document.getElementById('cardName');
+const cardDesc = document.getElementById('cardDesc');
+const blessingText = document.getElementById('blessingText');
+const openedHint = document.getElementById('openedHint');
+const confettiCanvas = document.getElementById('confetti-canvas');
+const ctx = confettiCanvas.getContext('2d');
+const resetBanner = document.getElementById('resetBanner');
+const resetBannerMsg = document.getElementById('resetBannerMsg');
+const resetBannerLink = document.getElementById('resetBannerLink');
+
+let gifts = loadGifts();
+let pendingBoxIndex = null;
+let confettiPieces = [];
+let confettiRunning = false;
+let serverDrawn = false;
+let serverOpenedIndex = null;
+
+// ==================== STARS BACKGROUND ====================
+function createStars() {
+  const container = document.getElementById('stars');
+  const count = 100;
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const size = Math.random() * 2.8 + 1;
+    const dur = Math.random() * 3.5 + 2;
+    const delay = Math.random() * 5;
+    html += `<div class="star" style="left:${x}%;top:${y}%;width:${size}px;height:${size}px;--dur:${dur}s;--delay:${delay}s;"></div>`;
+  }
+  container.innerHTML = html;
+}
+
+function spawnShootingStar() {
+  const container = document.getElementById('stars');
+  const star = document.createElement('div');
+  star.className = 'star shooting';
+  const startX = Math.random() * 60;
+  const startY = Math.random() * 30;
+  star.style.left = startX + '%';
+  star.style.top = startY + '%';
+  star.style.setProperty('--sx', (Math.random() * 200 + 100) + 'px');
+  star.style.setProperty('--sy', (Math.random() * 200 + 100) + 'px');
+  container.appendChild(star);
+  setTimeout(() => star.remove(), 1600);
+}
+
+// ==================== RENDER GIFT BOXES ====================
+function renderBoxes() {
+  const drawn = serverDrawn || isOpenedLocal();
+  const openedIdx = serverOpenedIndex !== null ? serverOpenedIndex : getOpenedIndexLocal();
+
+  let html = '';
+  gifts.forEach((gift, i) => {
+    const isMine = drawn && i === openedIdx;
+    const isLocked = drawn && i !== openedIdx;
+    const openedClass = isLocked ? ' opened-box' : '';
+    const mineClass = isMine ? ' opened-by-me' : '';
+
+    const sparklesHtml = (!isLocked && !isMine) ? `
+      <div class="orbiting-sparkles">
+        <div class="orbit-sparkle" style="--orbit-r:72px;--orbit-dur:2.5s;--orbit-delay:0s;"></div>
+        <div class="orbit-sparkle" style="--orbit-r:72px;--orbit-dur:2.5s;--orbit-delay:0.5s;"></div>
+        <div class="orbit-sparkle" style="--orbit-r:72px;--orbit-dur:2.5s;--orbit-delay:1s;"></div>
+        <div class="orbit-sparkle" style="--orbit-r:72px;--orbit-dur:2.5s;--orbit-delay:1.5s;"></div>
+        <div class="orbit-sparkle" style="--orbit-r:72px;--orbit-dur:2.5s;--orbit-delay:2s;"></div>
+        <div class="orbit-sparkle" style="--orbit-r:55px;--orbit-dur:3.2s;--orbit-delay:0.3s;"></div>
+        <div class="orbit-sparkle" style="--orbit-r:55px;--orbit-dur:3.2s;--orbit-delay:1.3s;"></div>
+        <div class="orbit-sparkle" style="--orbit-r:55px;--orbit-dur:3.2s;--orbit-delay:2.3s;"></div>
+      </div>` : '';
+
+    html += `
+      <div class="gift-box-wrapper${openedClass}${mineClass}" data-index="${i}">
+        ${isLocked ? '<div class="opened-badge">🔒</div>' : ''}
+        ${isMine ? '<div class="opened-badge">✅</div>' : ''}
+        ${sparklesHtml}
+        <div style="position:relative;">
+          <div class="box-glow"></div>
+          <div class="gift-box">
+            <div class="box-lid"><div class="lid-ribbon"></div><div class="bow"><div class="bow-center"></div></div></div>
+            <div class="box-body">
+              <div class="ribbon-v"></div>
+              <div class="ribbon-h"></div>
+              <div class="ribbon-cross"></div>
+            </div>
+          </div>
+        </div>
+        <div class="box-label">${isMine ? '✨ 我的礼物 ✨' : '礼盒 ' + (i + 1)}</div>
+      </div>`;
+  });
+  giftGrid.innerHTML = html;
+
+  if (drawn) {
+    openedHint.style.display = 'inline-block';
+  }
+
+  giftGrid.querySelectorAll('.gift-box-wrapper').forEach(wrapper => {
+    wrapper.addEventListener('click', () => {
+      const idx = parseInt(wrapper.dataset.index);
+      handleBoxClick(idx);
+    });
+    wrapper.addEventListener('mouseenter', () => {
+      if (!wrapper.classList.contains('opened-box')) {
+        sound.init();
+        sound.resume();
+        sound.hover();
+      }
+    });
+  });
+}
+
+// ==================== BOX CLICK HANDLER ====================
+function handleBoxClick(index) {
+  const drawn = serverDrawn || isOpenedLocal();
+  const openedIdx = serverOpenedIndex !== null ? serverOpenedIndex : getOpenedIndexLocal();
+
+  if (drawn) {
+    if (index === openedIdx) {
+      showCard(openedIdx);
+    } else {
+      showToast('你已经打开过一个礼盒了，去看看你的礼物吧 ✨');
+    }
+    return;
+  }
+
+  pendingBoxIndex = index;
+  confirmModal.classList.add('active');
+}
+
+// ==================== OPEN BOX ====================
+async function openBox(index) {
+  confirmModal.classList.remove('active');
+
+  const wrapper = giftGrid.querySelectorAll('.gift-box-wrapper')[index];
+  if (!wrapper) return;
+
+  const drawn = serverDrawn || isOpenedLocal();
+  if (drawn && (serverOpenedIndex !== null ? serverOpenedIndex : getOpenedIndexLocal()) !== index) return;
+
+  // Call API first
+  const result = await apiDraw(index);
+  if (!result.success) {
+    if (result.alreadyDrawn) {
+      showToast('你已经抽过了！同一IP只能抽一次 🎁');
+      await checkServerStatus();
+      renderBoxes();
+    }
+    return;
+  }
+
+  serverDrawn = true;
+  serverOpenedIndex = index;
+  markOpenedLocal(index);
+
+  sound.init();
+  sound.resume();
+
+  // Phase 1: Shake + sound
+  wrapper.classList.add('shaking');
+  sound.shake();
+
+  // Golden crack
+  setTimeout(() => {
+    const box = wrapper.querySelector('.gift-box');
+    if (box) {
+      const crack = document.createElement('div');
+      crack.className = 'golden-crack';
+      box.appendChild(crack);
+      setTimeout(() => crack.remove(), 1000);
+    }
+  }, 300);
+
+  // Phase 2: Open lid
+  setTimeout(() => {
+    wrapper.classList.remove('shaking');
+    wrapper.classList.add('opening');
+    sound.open();
+    spawnParticles(wrapper);
+
+    // Light beam
+    const box = wrapper.querySelector('.gift-box');
+    if (box) {
+      const beam = document.createElement('div');
+      beam.className = 'light-beam';
+      box.appendChild(beam);
+      setTimeout(() => beam.remove(), 1100);
+    }
+  }, 500);
+
+  // Phase 3: Show card
+  setTimeout(() => {
+    showCard(index);
+    startConfetti();
+    sound.celebrate();
+    renderBoxes();
+  }, 1200);
+}
+
+// ==================== SPAWN PARTICLES ====================
+function spawnParticles(wrapper) {
+  const rect = wrapper.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  const emojis = ['✨', '🌟', '💫', '⭐', '🎉', '💖', '🎊', '✨', '💎', '🪄'];
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      particle.style.left = cx + 'px';
+      particle.style.top = cy + 'px';
+      particle.style.setProperty('--px', (Math.random() - 0.5) * 400 + 'px');
+      particle.style.setProperty('--py', (Math.random() - 0.5) * 400 - 80 + 'px');
+      particle.style.setProperty('--rot', (Math.random() * 360) + 'deg');
+      particle.style.animationDuration = (Math.random() * 1 + 1) + 's';
+      document.body.appendChild(particle);
+      setTimeout(() => particle.remove(), 1600);
+    }, i * 20);
+  }
+}
+
+// ==================== SHOW CARD ====================
+function showCard(index) {
+  const gift = gifts[index];
+  if (gift.img) {
+    cardImage.src = gift.img;
+    cardImage.style.display = 'block';
+    cardEmoji.style.display = 'none';
+  } else if (gift.emoji) {
+    cardImage.style.display = 'none';
+    cardEmoji.style.display = '';
+    cardEmoji.textContent = gift.emoji;
+  } else {
+    cardImage.style.display = 'none';
+    cardEmoji.style.display = 'none';
+  }
+  cardName.textContent = gift.name;
+  cardDesc.textContent = gift.desc;
+  blessingText.textContent = gift.blessing;
+
+  cardScene.classList.remove('flipped');
+  cardScene.style.animation = 'none';
+  cardScene.offsetHeight;
+  cardScene.style.animation = '';
+
+  cardOverlay.classList.add('active');
+}
+
+function hideCard() {
+  cardOverlay.classList.remove('active');
+}
+
+// Card flip
+cardInner.addEventListener('click', () => {
+  cardScene.classList.toggle('flipped');
+  sound.init();
+  sound.resume();
+  sound.flip();
+});
+
+// Close card
+document.getElementById('closeCard').addEventListener('click', hideCard);
+cardOverlay.addEventListener('click', (e) => {
+  if (e.target === cardOverlay) hideCard();
+});
+
+// ==================== CONFIRMATION MODAL ====================
+document.getElementById('btnCancel').addEventListener('click', () => {
+  confirmModal.classList.remove('active');
+  pendingBoxIndex = null;
+});
+
+document.getElementById('btnConfirm').addEventListener('click', () => {
+  if (pendingBoxIndex !== null) {
+    openBox(pendingBoxIndex);
+  }
+});
+
+confirmModal.addEventListener('click', (e) => {
+  if (e.target === confirmModal) {
+    confirmModal.classList.remove('active');
+    pendingBoxIndex = null;
+  }
+});
+
+// ==================== CONFETTI ====================
+function resizeCanvas() {
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+}
+
+const CONFETTI_COLORS = [
+  '#e8c97a', '#d4a85c', '#e8a0bf', '#c9a0dc', '#75b798',
+  '#b392d4', '#f0a58a', '#ff6b6b', '#51cf66', '#ffd43b',
+  '#da77f2', '#4dabf7', '#ff922b', '#20c997'
+];
+
+function createConfettiPiece() {
+  const isCircle = Math.random() < 0.35;
+  return {
+    x: Math.random() * confettiCanvas.width,
+    y: -30,
+    w: isCircle ? 0 : Math.random() * 12 + 5,
+    h: isCircle ? 0 : Math.random() * 7 + 4,
+    r: isCircle ? Math.random() * 5 + 2 : 0,
+    isCircle,
+    color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+    vx: (Math.random() - 0.5) * 5,
+    vy: Math.random() * 3 + 2.5,
+    rot: Math.random() * 360,
+    rotSpeed: (Math.random() - 0.5) * 10,
+    wobble: Math.random() * 3,
+    opacity: 1,
+  };
+}
+
+function startConfetti() {
+  confettiRunning = true;
+  confettiPieces = [];
+  for (let i = 0; i < 100; i++) {
+    const p = createConfettiPiece();
+    p.x = confettiCanvas.width / 2 + (Math.random() - 0.5) * 240;
+    p.y = confettiCanvas.height / 2;
+    p.vy = (Math.random() - 0.5) * 14 - 5;
+    p.vx = (Math.random() - 0.5) * 20;
+    confettiPieces.push(p);
+  }
+  animateConfetti();
+
+  setTimeout(() => { confettiRunning = false; }, 4000);
+}
+
+function animateConfetti() {
+  if (!confettiRunning && confettiPieces.length === 0) return;
+
+  ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+  confettiPieces = confettiPieces.filter(p => {
+    p.x += p.vx + Math.sin(p.rot * 0.05) * p.wobble;
+    p.vy += 0.15;
+    p.y += p.vy;
+    p.rot += p.rotSpeed;
+    p.opacity -= 0.0025;
+
+    if (p.opacity <= 0 || p.y > confettiCanvas.height + 30) return false;
+
+    ctx.save();
+    ctx.globalAlpha = p.opacity;
+    ctx.translate(p.x, p.y);
+    ctx.rotate((p.rot * Math.PI) / 180);
+
+    if (p.isCircle) {
+      ctx.beginPath();
+      ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.roundRect(-p.w / 2, -p.h / 2, p.w, p.h, 2);
+      ctx.fill();
+    }
+    ctx.restore();
+    return true;
+  });
+
+  if (confettiRunning && Math.random() < 0.5) {
+    confettiPieces.push(createConfettiPiece());
+  }
+
+  requestAnimationFrame(animateConfetti);
+}
+
+// ==================== SERVER STATUS ====================
+async function checkServerStatus() {
+  const status = await apiStatus();
+  if (status.drawn) {
+    serverDrawn = true;
+    serverOpenedIndex = status.boxIndex;
+    if (!isOpenedLocal() || getOpenedIndexLocal() !== status.boxIndex) {
+      markOpenedLocal(status.boxIndex);
+    }
+  }
+}
+
+// ==================== RESET TOKEN IN URL ====================
+async function handleResetToken() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('reset');
+  if (!token) return;
+
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  const result = await apiUseResetToken(token);
+  if (result.success) {
+    serverDrawn = false;
+    serverOpenedIndex = null;
+    resetLocalState();
+    resetBanner.className = 'reset-banner success';
+    resetBannerMsg.textContent = '✅ 重置成功！你可以重新抽取礼盒了';
+    resetBanner.style.display = 'block';
+    renderBoxes();
+    showToast('🎉 重置成功！请选择你的礼盒');
+  } else {
+    resetBanner.style.display = 'block';
+    resetBannerMsg.textContent = '⚠️ ' + (result.message || '重置失败');
+  }
+}
+
+// ==================== ADMIN PANEL ====================
+const adminTrigger = document.getElementById('adminTrigger');
+const adminBackdrop = document.getElementById('adminBackdrop');
+const adminPanel = document.getElementById('adminPanel');
+const adminPasswordOverlay = document.getElementById('adminPasswordOverlay');
+const adminBoxForms = document.getElementById('adminBoxForms');
+
+function openAdminPanel() {
+  renderAdminForms();
+  loadAdminStats();
+  adminPanel.classList.add('open');
+  adminBackdrop.classList.add('active');
+}
+
+function closeAdminPanel() {
+  adminPanel.classList.remove('open');
+  adminBackdrop.classList.remove('active');
+}
+
+function renderAdminForms() {
+  gifts = loadGifts();
+  const dotColors = ['#f0b0d0', '#7eb8ff', '#80c8a0', '#c0a0e0', '#f8b090', '#f8e0a0'];
+  let html = '';
+  gifts.forEach((gift, i) => {
+    html += `
+      <div class="admin-box-group">
+        <h4><span class="box-color-dot" style="background:${dotColors[i]}"></span>礼盒 ${i + 1}</h4>
+        <label>礼物名称</label>
+        <input type="text" id="adminName${i}" value="${escapeHtml(gift.name)}" placeholder="礼物名称">
+        <label>图标 Emoji（留空则用图片）</label>
+        <input type="text" id="adminEmoji${i}" value="${escapeHtml(gift.emoji || '')}" placeholder="🎁" maxlength="4">
+        <label>图片文件名（放在 public 目录下）</label>
+        <input type="text" id="adminImg${i}" value="${escapeHtml(gift.img || '')}" placeholder="photo.jpg">
+        <label>礼物描述</label>
+        <input type="text" id="adminDesc${i}" value="${escapeHtml(gift.desc)}" placeholder="简短描述">
+        <label>祝福语（卡片背面）</label>
+        <textarea id="adminBlessing${i}" rows="3" placeholder="写给收礼人的祝福">${escapeHtml(gift.blessing)}</textarea>
+      </div>`;
+  });
+  adminBoxForms.innerHTML = html;
+}
+
+async function loadAdminStats() {
+  const statsDiv = document.getElementById('adminStats');
+  const stats = await apiAdminStats(ADMIN_PASSWORD);
+  if (stats.error) {
+    statsDiv.innerHTML = '<div style="color:rgba(255,255,255,0.3)">统计加载失败：' + escapeHtml(stats.error) + '</div>';
+    return;
+  }
+  let html = `<div style="color:#e8c97a;font-size:0.85em;margin-bottom:8px;">📊 统计：${stats.totalDraws} 次抽奖</div>`;
+  if (stats.draws && stats.draws.length > 0) {
+    stats.draws.forEach(d => {
+      html += `<div class="stat-row"><span>${escapeHtml(d.ip)}</span><span>礼盒 ${d.boxIndex + 1} · ${new Date(d.drawnAt).toLocaleString('zh-CN')}</span></div>`;
+    });
+  } else {
+    html += '<div style="color:rgba(255,255,255,0.2)">暂无抽奖记录</div>';
+  }
+  statsDiv.innerHTML = html;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Save gifts
+document.getElementById('btnSaveGifts').addEventListener('click', () => {
+  const newGifts = gifts.map((_, i) => ({
+    name: document.getElementById(`adminName${i}`)?.value || gifts[i].name,
+    emoji: document.getElementById(`adminEmoji${i}`)?.value || gifts[i].emoji || '',
+    img: document.getElementById(`adminImg${i}`)?.value || gifts[i].img || '',
+    desc: document.getElementById(`adminDesc${i}`)?.value || gifts[i].desc,
+    blessing: document.getElementById(`adminBlessing${i}`)?.value || gifts[i].blessing,
+  }));
+  saveGifts(newGifts);
+  gifts = newGifts;
+  renderBoxes();
+  closeAdminPanel();
+  showToast('✅ 设置已保存');
+});
+
+// Reset all
+document.getElementById('btnResetAll').addEventListener('click', async () => {
+  if (confirm('确定要重置所有数据吗？\n\n这将清除：\n• 礼盒内容（恢复默认）\n• 所有抽奖记录\n• 所有重置链接\n\n此操作不可撤销。')) {
+    await apiAdminClearAll(ADMIN_PASSWORD);
+    localStorage.clear();
+    gifts = [...DEFAULT_GIFTS];
+    serverDrawn = false;
+    serverOpenedIndex = null;
+    renderBoxes();
+    closeAdminPanel();
+    showToast('🔄 已重置所有数据');
+  }
+});
+
+// Restart draw
+document.getElementById('btnRestart').addEventListener('click', () => {
+  resetLocalState();
+  serverDrawn = false;
+  serverOpenedIndex = null;
+  renderBoxes();
+  closeAdminPanel();
+  showToast('🎰 已重置，可以重新抽啦');
+});
+
+// Generate reset link
+document.getElementById('btnGenReset').addEventListener('click', async () => {
+  const resultDiv = document.getElementById('resetLinkResult');
+  const result = await apiGenerateResetToken(ADMIN_PASSWORD);
+  if (result.success && result.token) {
+    const link = window.location.origin + window.location.pathname + '?reset=' + result.token;
+    resultDiv.textContent = link;
+    resultDiv.className = 'reset-link-result show';
+    resultDiv.onclick = () => {
+      navigator.clipboard.writeText(link).then(() => showToast('📋 链接已复制！'));
+    };
+    showToast('🔗 重置链接已生成（点击复制）');
+  } else {
+    resultDiv.textContent = '生成失败：' + (result.error || '未知错误');
+    resultDiv.className = 'reset-link-result show';
+  }
+});
+
+// Admin trigger
+adminTrigger.addEventListener('click', () => {
+  if (adminPanel.classList.contains('open')) {
+    closeAdminPanel();
+  } else {
+    document.getElementById('adminPasswordInput').value = '';
+    adminPasswordOverlay.classList.add('active');
+  }
+});
+
+adminBackdrop.addEventListener('click', closeAdminPanel);
+
+// Password
+document.getElementById('btnPasswordCancel').addEventListener('click', () => {
+  adminPasswordOverlay.classList.remove('active');
+});
+document.getElementById('btnPasswordConfirm').addEventListener('click', () => {
+  const input = document.getElementById('adminPasswordInput').value;
+  if (input === ADMIN_PASSWORD) {
+    adminPasswordOverlay.classList.remove('active');
+    openAdminPanel();
+  } else {
+    showToast('❌ 密码错误');
+  }
+});
+document.getElementById('adminPasswordInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('btnPasswordConfirm').click();
+  }
+});
+
+// ==================== TOAST ====================
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2800);
+}
+
+// ==================== KEYBOARD ====================
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (confirmModal.classList.contains('active')) {
+      confirmModal.classList.remove('active');
+    } else if (cardOverlay.classList.contains('active')) {
+      hideCard();
+    } else if (adminPanel.classList.contains('open')) {
+      closeAdminPanel();
+    } else if (adminPasswordOverlay.classList.contains('active')) {
+      adminPasswordOverlay.classList.remove('active');
+    }
+  }
+});
+
+// ==================== INIT ====================
+async function init() {
+  sound.init();
+  createStars();
+  resizeCanvas();
+  gifts = loadGifts();
+
+  await checkServerStatus();
+  await handleResetToken();
+
+  renderBoxes();
+
+  setInterval(() => {
+    if (Math.random() < 0.3) spawnShootingStar();
+  }, 4000);
+}
+
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('load', init);
+
+// Resume audio on first interaction
+document.addEventListener('click', () => sound.resume(), { once: true });
+document.addEventListener('touchstart', () => sound.resume(), { once: true });
+</script>
+
+</body>
+</html>
