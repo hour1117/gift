@@ -8,7 +8,8 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = 'zjmaicsy';
 
 // ==================== DATA STORE ====================
-const DATA_DIR = path.join(__dirname, 'data');
+// Vercel 用 /tmp，本地用 ./data
+const DATA_DIR = process.env.VERCEL ? '/tmp/data' : path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'draws.json');
 
 function ensureDataDir() {
