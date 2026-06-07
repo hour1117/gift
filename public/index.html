@@ -102,6 +102,38 @@ body {
 .reset-banner .reset-link { display: block; margin-top: 6px; color: #6ea8fe; font-size: 0.85em; word-break: break-all; }
 .reset-banner.success { display: block; background: rgba(117,183,152,0.1); border-color: rgba(117,183,152,0.3); }
 
+/* ===== Code Input (加抽码) ===== */
+.code-section {
+  display: none;
+  margin: 0 auto 20px; max-width: 380px;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px; text-align: center;
+}
+.code-section.show { display: block; animation: fadeIn 0.5s ease; }
+.code-section .code-label {
+  color: rgba(255,255,255,0.55); font-size: 0.85em; margin-bottom: 10px;
+}
+.code-input-row {
+  display: flex; gap: 8px; justify-content: center;
+}
+.code-input-row input {
+  width: 140px; padding: 10px 14px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px; color: white; font-size: 1.2em; text-align: center;
+  letter-spacing: 4px; outline: none; font-family: 'Courier New', monospace;
+  transition: border-color 0.3s;
+}
+.code-input-row input:focus { border-color: rgba(232,201,122,0.5); }
+.code-input-row input::placeholder { letter-spacing: 1px; font-size: 0.7em; }
+.btn-code {
+  padding: 10px 20px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, #75b798, #4d8a6e);
+  color: white; font-size: 0.9em; font-weight: 600; cursor: pointer;
+  transition: all 0.3s;
+}
+.btn-code:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
 /* ===== Gift Box Grid ===== */
 .gift-grid {
   display: flex; flex-wrap: wrap; justify-content: center;
@@ -746,6 +778,15 @@ body {
     <span class="reset-link" id="resetBannerLink"></span>
   </div>
 
+  <!-- Code Input (加抽码) -->
+  <div class="code-section" id="codeSection">
+    <div class="code-label">🔑 输入加抽码获取额外抽取机会</div>
+    <div class="code-input-row">
+      <input type="text" id="codeInput" placeholder="6位数字" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+      <button class="btn-code" id="btnUseCode">使用</button>
+    </div>
+  </div>
+
   <!-- Gift Box Grid -->
   <div class="gift-grid" id="giftGrid"></div>
 </div>
@@ -816,6 +857,8 @@ body {
   <div id="adminBoxForms"></div>
   <button class="btn-gen-reset" id="btnGenReset">🔗 生成专属重置链接</button>
   <div class="reset-link-result" id="resetLinkResult"></div>
+  <button class="btn-gen-reset" id="btnGenCode" style="background:linear-gradient(135deg,#75b798,#4d8a6e);">🎫 生成加抽码</button>
+  <div class="reset-link-result" id="codeResult"></div>
   <div class="admin-stats" id="adminStats"></div>
   <div class="admin-actions">
     <button class="btn-save" id="btnSaveGifts">💾 保存设置</button>
@@ -1055,6 +1098,31 @@ async function apiAdminStats(password) {
   }
 }
 
+async function apiGenerateCode(password) {
+  try {
+    const res = await fetch('/api/admin/generate-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Password': password },
+    });
+    return await res.json();
+  } catch (e) {
+    return { success: false, error: '网络错误' };
+  }
+}
+
+async function apiUseCode(code) {
+  try {
+    const res = await fetch('/api/code/use', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    return await res.json();
+  } catch (e) {
+    return { success: false, error: '网络错误' };
+  }
+}
+
 async function apiAdminClearAll(password) {
   try {
     const res = await fetch('/api/admin/clear-all', {
@@ -1169,6 +1237,9 @@ function renderBoxes() {
 
   if (drawn) {
     openedHint.style.display = 'inline-block';
+    document.getElementById('codeSection').classList.add('show');
+  } else {
+    document.getElementById('codeSection').classList.remove('show');
   }
 
   giftGrid.querySelectorAll('.gift-box-wrapper').forEach(wrapper => {
@@ -1609,6 +1680,23 @@ document.getElementById('btnGenReset').addEventListener('click', async () => {
   }
 });
 
+// Generate code
+document.getElementById('btnGenCode').addEventListener('click', async () => {
+  const resultDiv = document.getElementById('codeResult');
+  const result = await apiGenerateCode(ADMIN_PASSWORD);
+  if (result.success && result.code) {
+    resultDiv.innerHTML = `<span style="font-size:2em;font-weight:700;letter-spacing:6px;color:#75b798;">${result.code}</span>`;
+    resultDiv.className = 'reset-link-result show';
+    resultDiv.onclick = () => {
+      navigator.clipboard.writeText(result.code).then(() => showToast('📋 加抽码已复制！'));
+    };
+    showToast('🎫 加抽码已生成（点击复制）');
+  } else {
+    resultDiv.textContent = '生成失败：' + (result.error || '未知错误');
+    resultDiv.className = 'reset-link-result show';
+  }
+});
+
 // Admin trigger
 adminTrigger.addEventListener('click', () => {
   if (adminPanel.classList.contains('open')) {
@@ -1637,6 +1725,33 @@ document.getElementById('btnPasswordConfirm').addEventListener('click', () => {
 document.getElementById('adminPasswordInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     document.getElementById('btnPasswordConfirm').click();
+  }
+});
+
+// ==================== CODE INPUT ====================
+document.getElementById('btnUseCode').addEventListener('click', async () => {
+  const input = document.getElementById('codeInput');
+  const code = input.value.trim();
+  if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+    showToast('⚠️ 请输入6位数字加抽码');
+    return;
+  }
+  const result = await apiUseCode(code);
+  if (result.success) {
+    serverDrawn = false;
+    serverOpenedIndex = null;
+    resetLocalState();
+    renderBoxes();
+    input.value = '';
+    showToast('🎉 加抽成功！请重新选择礼盒');
+  } else {
+    showToast('❌ ' + (result.message || '加抽码无效'));
+  }
+});
+
+document.getElementById('codeInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    document.getElementById('btnUseCode').click();
   }
 });
 

@@ -23,12 +23,16 @@ function readData() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-      return JSON.parse(raw);
+      const data = JSON.parse(raw);
+      // 兼容旧数据：确保 codes 字段存在
+      if (!data.codes) data.codes = {};
+      if (!data.tokens) data.tokens = {};
+      return data;
     }
   } catch (e) {
     console.error('读取数据文件失败:', e.message);
   }
-  return { draws: {}, tokens: {} };
+  return { draws: {}, tokens: {}, codes: {} };
 }
 
 function writeData(data) {
@@ -49,6 +53,12 @@ function getClientIP(req) {
 
 function generateToken() {
   return crypto.randomBytes(12).toString('base64url');
+}
+
+function generateCode() {
+  // 6位随机数字 100000~999999
+  const num = crypto.randomInt(100000, 1000000);
+  return num.toString();
 }
 
 function requireAdmin(req, res, next) {
@@ -158,9 +168,60 @@ app.post('/api/reset/:token', (req, res) => {
   res.json({ success: true, message: '重置成功！请刷新页面重新抽取' });
 });
 
+// POST /api/admin/generate-code — 生成加抽码（需管理员密码）
+app.post('/api/admin/generate-code', requireAdmin, (req, res) => {
+  let code = generateCode();
+  const data = readData();
+  // 防止重复
+  while (data.codes[code]) {
+    code = generateCode();
+  }
+  data.codes[code] = {
+    used: false,
+    createdAt: new Date().toISOString(),
+  };
+  writeData(data);
+  console.log(`[加抽码] 生成: ${code}`);
+  res.json({ success: true, code });
+});
+
+// POST /api/code/use — 使用加抽码
+app.post('/api/code/use', (req, res) => {
+  const ip = getClientIP(req);
+  const { code } = req.body;
+
+  if (!code) {
+    return res.status(400).json({ success: false, message: '请输入加抽码' });
+  }
+
+  const data = readData();
+  const codeRecord = data.codes[code];
+
+  if (!codeRecord) {
+    return res.json({ success: false, message: '无效的加抽码' });
+  }
+  if (codeRecord.used) {
+    return res.json({ success: false, message: '该加抽码已被使用过' });
+  }
+
+  // 标记已用
+  data.codes[code].used = true;
+  data.codes[code].usedAt = new Date().toISOString();
+  data.codes[code].usedBy = ip;
+
+  // 清除该 IP 的抽奖记录
+  if (data.draws[ip]) {
+    delete data.draws[ip];
+  }
+
+  writeData(data);
+  console.log(`[加抽码] IP: ${ip} 使用码 ${code} 重置了抽奖状态`);
+  res.json({ success: true, message: '加抽成功！请刷新页面重新抽取' });
+});
+
 // POST /api/admin/clear-all — 清除所有记录（需管理员密码）
 app.post('/api/admin/clear-all', requireAdmin, (req, res) => {
-  writeData({ draws: {}, tokens: {} });
+  writeData({ draws: {}, tokens: {}, codes: {} });
   console.log('[管理员] 清除所有抽奖记录');
   res.json({ success: true, message: '所有记录已清除' });
 });
@@ -172,13 +233,18 @@ app.get('/api/admin/stats', requireAdmin, (req, res) => {
     .map(([ip, record]) => ({ ip, ...record }));
   const tokenEntries = Object.entries(data.tokens)
     .map(([token, record]) => ({ token: token.substring(0, 8) + '...', ...record }));
+  const codeEntries = Object.entries(data.codes || {})
+    .map(([code, record]) => ({ code, ...record }));
 
   res.json({
     totalDraws: drawEntries.length,
     totalTokens: tokenEntries.length,
     unusedTokens: tokenEntries.filter(t => !t.used).length,
+    totalCodes: codeEntries.length,
+    unusedCodes: codeEntries.filter(c => !c.used).length,
     draws: drawEntries,
     tokens: tokenEntries,
+    codes: codeEntries,
   });
 });
 
